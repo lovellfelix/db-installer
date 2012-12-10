@@ -28,4 +28,10 @@
 
 <!-- Main content
 ================================================== -->
-	
+	<div id="wrap">
+ 		<div class="container">
+        <div class="page-header">
+ 		<h1>Database Installer</h1>
+ 		</div>
+        <p class="lead">Get setup in minutes! Enjoy the super easy installation wizard to walk you through the setup process.<br /></p>
+        <br />

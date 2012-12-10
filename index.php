@@ -12,14 +12,7 @@
  
  include_once("header.php"); 
  
- echo '<div id="wrap">
- 		<div class="container">
-        <div class="page-header">
- 		<h1>Database Installer</h1>';
-		
-	
-		echo '</div>
-        <p class="lead">Get setup in minutes! Enjoy the super easy installation wizard to walk you through the setup process.<br /></p>
+ echo '
       ';
 		
  //Check for db connect file	
