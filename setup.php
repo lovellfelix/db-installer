@@ -6,15 +6,209 @@
  *
  * @author       Lovell Felix <hello@lovellfelix.com>
  * @copyright    Copyright © 2009-2012 Lovell Felix
- * @license      
  * @link         http://labs.lovellfelix.com
  */
  
  include_once('header.php');
  
  
+$install = new Install();
+
+class Install {
+
+	private $error;
+	private $link;
+	private $settings = array();
+
+	function __construct() {
+
+		$this->checkInstall($hideError = true);
+
+		if( !empty($_POST) ) :
+
+			foreach ($_POST as $key => $value)
+				$this->settings[$key] = $value;
+
+			$this->validate();
+
+		endif;
+
+		if(!empty($this->error))
+			echo $this->error;
+
+	}
+
+	// Run queries
+	private function query($query) {
+
+		$result = mysql_query($query);
+
+		if (!$result) {
+			echo _('Could not run query:') . mysql_error() . '<br/>';
+			include_once('footer.php');
+			exit;
+		}
+
+		return $result;
+
+	}
+
+	// Check for all form fields to be filled out
+	private function validate() {
+
+		if(strlen($this->settings['adminPass']) < 5)
+			$this->error = '<div class="alert alert-error">'._('Password must be at least 5 characters.').'</div>';
+		else
+			$this->settings['adminPass'] = md5($this->settings['adminPass']);
+
+		if( empty($this->settings['dbHost']) || empty($this->settings['dbUser']) || empty($this->settings['dbName']) || empty($this->settings['scriptPath']) || empty($this->settings['email']) || empty($this->settings['adminUser']) || empty($this->settings['adminPass'] ))
+			$this->error = '<div class="alert alert-error">'._('Fill out all the details please').'</div>';
+
+		// Check the database connection
+		$this->dbLink();
+
+	}
+
+	// Check if there is a connection to the mysql server
+	private function dbLink() {
+
+		if(empty($this->error)) {
+			$this->link = @mysql_connect($this->settings['dbHost'], $this->settings['dbUser'], $this->settings['dbPass']);
+
+			if(!$this->link)
+				$this->error = '<div class="alert alert-error">'._('Your Database details are incorrect.').'</div>';
+			else
+				$this->dbSelect();
+
+		}
+
+	}
+
+	// Check for database selection
+	private function dbSelect() {
+
+		if(empty($this->error)) {
+			$dbSelect = mysql_select_db($this->settings['dbName'],$this->link);
+
+			if(!$dbSelect)
+				$this->error = '<div class="alert alert-error">'._('Database name doesn\'t exist !').'</div>';
+			else
+				$this->existingTables();
+		}
+
+	}
+
+	// Check for an existing installation
+	private function existingTables() {
+
+		if(empty($this->error)) :
+
+			$this->insertSQL();
+			$this->writeFile();
+			$this->checkInstall();
+
+		endif;
+
+	}
+
+	// Insert SQL data
+	private function insertSQL() {
+
+		if(empty($this->error)) {
+
+			$this->query("SET NAMES utf8;");
 
 
+			$this->query("
+				CREATE TABLE IF NOT EXISTS `website_settings` (
+				  `id` int(11) NOT NULL AUTO_INCREMENT,
+				  `option_name` varchar(255) NOT NULL,
+				  `option_value` longtext NOT NULL,
+				  PRIMARY KEY (`id`),
+				  UNIQUE KEY `id` (`id`),
+				  UNIQUE KEY `option_name` (`option_name`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+			");
+
+			$ok = $this->query("
+				INSERT IGNORE INTO `website_settings` (`id`, `option_name`, `option_value`) VALUES
+				(1, 'site_address', '".$this->settings['scriptPath']."'),
+				(2, 'admin_email', '".$this->settings['email']."');
+			");
+
+			$this->query("
+				CREATE TABLE IF NOT EXISTS `users` (
+				  `user_id` int(8) NOT NULL AUTO_INCREMENT,
+				  `username` varchar(11) NOT NULL,
+				  `name` varchar(255) NOT NULL,
+				  `email` varchar(255) NOT NULL,
+				  `password` varchar(128) NOT NULL,
+				  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				  PRIMARY KEY (`user_id`),
+				  UNIQUE KEY `user_id` (`user_id`),
+				  UNIQUE KEY `username` (`username`)
+				) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+			");
+
+			$this->query("
+				INSERT IGNORE INTO `users` (`user_id`, `username`, `name`, `email`, `password`) VALUES
+				(1, '".$this->settings['adminUser']."', 'Admin', '".$this->settings['email']."', '".$this->settings['adminPass']."'),
+				(2, 'lovell', 'Lovell Felix', 'hello@lovellfelix.com', '21232f297a57a5a743894a0e4a801fc3');
+			");
+
+		} else $this->error = 'Your tables already exist! I won\'t insert anything.';
+	}
+
+	private function writeFile() {
+
+		if($this->error == '') {
+
+			/** Write db-config.php if it doesn't exist */
+			$fp = @fopen("config/db-connect.php", "w");
+
+			if( !$fp ) :
+				echo '<div class="alert alert-warning">'._('Could not create config/db-connect.php, please confirm you have permission to create the file.').'</div>';
+				return false;
+			endif;
+
+
+fwrite($fp, '<?php
+
+////////////////////
+// This file contains the database access information. 
+// This file is needed to establish a connection to MySQL
+
+$host = "'.$this->settings['dbHost'].'"; // localhost normally works, if localhost doesn\'t exist contact your web host
+$dbName = "'.$this->settings['dbName'].'"; // Database name
+$dbUser = "'.$this->settings['dbUser'].'"; // Username
+$dbPass = "'.$this->settings['dbPass'].'"; // Password
+
+?>');
+			fclose($fp);
+		}
+
+	}
+
+	private function checkInstall($hideError = false) {
+
+			if (file_exists('config/db-connect.php')) : ?>
+				<div class="row-fluid">
+					<div class="span8">
+						<div class="alert alert-success"><strong>Success!</strong> Installation is complete </div>
+						<p><span class="label label-important">Important</span> 
+	    Delete or rename the install folder to prevent security risk. </p>
+					</div>
+				
+				</div> <?php
+				include('footer.php');
+				exit();
+			else :
+				if (!$hideError) $this->error = '<div class="alert alert-error">'._('Installation is not complete.').'</div>';
+			endif;
+	}
+
+}
+ 
  
  ?>
  
