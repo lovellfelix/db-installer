@@ -1,19 +1,13 @@
 <?php
-
-
 /**
  * Installs MySQL database
  *
  * @author       Lovell Felix <hello@lovellfelix.com>
- * @copyright    Copyright © 2009-2012 Lovell Felix
- * @license      
+ * @copyright    Copyright © 2009-2012 Lovell Felix  
  * @link         http://labs.lovellfelix.com
  */
  
  include_once("header.php"); 
- 
- echo '
-      ';
 		
  //Check for db connect file	
 	
@@ -27,8 +21,5 @@
 	    echo '<a href="setup.php" <button class="btn btn-success">Begin Intall</button></a>
 	    ';
 	}
-								
-					
- 
         
 include_once("footer.php"); ?>
