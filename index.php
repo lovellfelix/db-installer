@@ -8,6 +8,11 @@
  */
  
  include_once("header.php"); 
+	
+echo '<h4>Database Installer</h4>
+ 		</div>
+        <p class="">Setup your database in minutes! Super easy installation wizard to walk you through the setup process.<br /></p>
+        <br />';
 		
  //Check for db connect file	
 	
