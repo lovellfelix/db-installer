@@ -11,7 +11,7 @@
     <div id="footer">
       <div class="container">
       <br />
-      <p class="pull-right"><a href="http://lovellfelix.com" target="_TOP">&copy; Lovell Felix 2012</a></p>
+      <p class="pull-left muted"><a href="http://lovellfelix.com" target="_TOP">&copy; Lovell Felix 2012</a></p>
       </div>
     </div>
 
